@@ -30,11 +30,10 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> sendMessage({
     required List<Message> allMessages,
     required String content,
-    required List<String> filePaths,
   }) async {
     final emptyChat = widget.chat == null && allMessages.isEmpty;
     if (emptyChat) await UserStore.instance.saveChat(chat);
-    final userMessage = new Message(content: content, filePaths: filePaths);
+    final userMessage = new Message(content: content);
     await UserStore.instance.saveMessage(chat, userMessage);
     _userHasScrolled = false;
     scrollToLastMessage();
@@ -45,7 +44,6 @@ class _ChatPageState extends State<ChatPage> {
         .chatCompleteStream(allMessages, userMessage)
         .listen((chatResult) async {
       aiMessage.content = chatResult.content;
-      aiMessage.fnCalls = chatResult.fnCalls;
       await UserStore.instance.saveMessage(chat, aiMessage);
       scrollToLastMessage();
     });
@@ -136,13 +134,10 @@ class _ChatPageState extends State<ChatPage> {
                   const SizedBox(height: 15),
                   // bind allMessages
                   InputField(
-                    (
-                        {required String content,
-                        required List<String> filePaths}) {
+                    ({required String content}) {
                       return sendMessage(
                         allMessages: allMessages,
                         content: content,
-                        filePaths: filePaths,
                       );
                     },
                   )
@@ -219,11 +214,7 @@ class AIMessage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 MarkdownBody(
-                  data: message.fnCalls.length > 0
-                      ? '''```bash
-${message.fnCalls.map((f) => f.fnArgs['code']).join('\n')}
-                      '''
-                      : message.content,
+                  data: message.content,
                   // TODO selectability is choppy, how can we fix that?
                   selectable: true,
                   extensionSet: md.ExtensionSet.gitHubWeb,
@@ -241,18 +232,6 @@ ${message.fnCalls.map((f) => f.fnArgs['code']).join('\n')}
                     ),
                   ),
                 SizedBox(height: 10),
-                if (message.fnCalls.length > 0 && !message.fnCallsDone())
-                  FilledButton(
-                      // TODO show loading indicator while running
-                      // TODO be able to cancel
-                      // TODO automatically respond with error
-                      onPressed: () async {
-                        for (var fnC in message.fnCalls) {
-                          await fnC.run();
-                        }
-                        await UserStore.instance.saveMessage(chat, message);
-                      },
-                      child: Text('Run'))
               ],
             ),
           ),

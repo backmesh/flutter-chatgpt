@@ -55,8 +55,7 @@ class _InputFieldState extends State<InputField> {
 
   @override
   void dispose() {
-    richTextController.dispose();
-    focusNode.dispose();
+    textController.dispose();
     super.dispose();
   }
 
@@ -218,51 +217,5 @@ class _InputFieldState extends State<InputField> {
         ),
       ],
     );
-  }
-}
-
-class RichTextEditingController extends TextEditingController {
-  List<String> selectedFiles = [];
-
-  void updateText(String text, List<String> selectedFiles) {
-    this.selectedFiles = selectedFiles;
-    this.text = text;
-  }
-
-  @override
-  void clear() {
-    super.clear();
-    selectedFiles.clear();
-  }
-
-  @override
-  TextSpan buildTextSpan(
-      {required BuildContext context,
-      TextStyle? style,
-      required bool withComposing}) {
-    final textSpans = <TextSpan>[];
-    int start = 0;
-
-    for (final file in selectedFiles) {
-      final index = text.indexOf('@$file', start); // Include '@' in the search
-      if (index != -1) {
-        if (index > start) {
-          textSpans.add(TextSpan(text: text.substring(start, index)));
-        }
-        textSpans.add(TextSpan(
-          text: '@$file', // Include '@' in the highlighted text
-          style: TextStyle(
-              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-              fontSize: 14),
-        ));
-        start = index + file.length + 1; // Adjust start position to include @
-      }
-    }
-
-    if (start < text.length) {
-      textSpans.add(TextSpan(text: text.substring(start)));
-    }
-
-    return TextSpan(style: style, children: textSpans);
   }
 }
