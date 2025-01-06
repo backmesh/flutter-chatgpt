@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
-import 'package:flutter_highlight/themes/a11y-light.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:nimbus/gemini.dart';
 import 'package:nimbus/widgets/common.dart';
-import 'package:nimbus/widgets/highlight.dart';
-import 'package:nimbus/widgets/input.dart';
 
 import '../user_store.dart';
 
@@ -133,14 +130,36 @@ class _ChatPageState extends State<ChatPage> {
                           })),
                   const SizedBox(height: 15),
                   // bind allMessages
-                  InputField(
-                    ({required String content}) {
-                      return sendMessage(
-                        allMessages: allMessages,
-                        content: content,
-                      );
-                    },
-                  )
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: TextField(
+                      controller: _inputController,
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.send),
+                          onPressed: () {
+                            if (_inputController.text.trim().isNotEmpty) {
+                              sendMessage(
+                                allMessages: allMessages,
+                                content: _inputController.text,
+                              );
+                              _inputController.clear();
+                            }
+                          },
+                        ),
+                      ),
+                      onSubmitted: (content) {
+                        if (content.trim().isNotEmpty) {
+                          sendMessage(
+                            allMessages: allMessages,
+                            content: content,
+                          );
+                          _inputController.clear();
+                        }
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -218,9 +237,6 @@ class AIMessage extends StatelessWidget {
                   // TODO selectability is choppy, how can we fix that?
                   selectable: true,
                   extensionSet: md.ExtensionSet.gitHubWeb,
-                  builders: {
-                    'code': CodeElementBuilder(),
-                  },
                 ),
                 if (message.waiting)
                   Padding(
@@ -236,27 +252,6 @@ class AIMessage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class CodeElementBuilder extends MarkdownElementBuilder {
-  @override
-  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    var language = '';
-
-    if (element.attributes['class'] != null) {
-      String lg = element.attributes['class'] as String;
-      language = lg.substring(9);
-    }
-    return SizedBox(
-      child: SelectableHighlightView(
-        element.textContent,
-        language: language,
-        theme: a11yLightTheme,
-        padding: const EdgeInsets.all(8),
-        textStyle: TextStyle(fontFamily: 'monospace', fontSize: 14.0),
       ),
     );
   }
