@@ -121,7 +121,7 @@ class UserStore {
   }
 
   static getModelOptions() {
-    return ['gemini-1.5-flash', 'gemini-1.5-pro'];
+    return ['gemini-1.5-flash'];
   }
 
   Query<Chat> readChats() {
