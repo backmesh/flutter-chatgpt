@@ -35,8 +35,6 @@ class GeminiClient {
   }
 
   chatComplete(List<Message> history, Message userMessage) async {
-    // add the sysmessage again here because otherwise it gets ignored often
-    // not great because we are using up a lot of the context window
     List<Content> contents = [];
     for (var msg in history) {
       contents.add(await msg.toGemini());
@@ -52,8 +50,6 @@ class GeminiClient {
 
   Stream<ChatResult> chatCompleteStream(
       List<Message> history, Message userMessage) async* {
-    // add the sysmessage again here because otherwise it gets ignored often
-    // not great because we are using up a lot of the context window
     List<Content> contents = [];
     for (var msg in history) {
       contents.add(await msg.toGemini());
