@@ -34,6 +34,22 @@ class GeminiClient {
     return _instance!;
   }
 
+  chatComplete(List<Message> history, Message userMessage) async {
+    // add the sysmessage again here because otherwise it gets ignored often
+    // not great because we are using up a lot of the context window
+    List<Content> contents = [];
+    for (var msg in history) {
+      contents.add(await msg.toGemini());
+    }
+    final chat = client.startChat(history: contents);
+    final content = await userMessage.toGemini();
+    final resps = await Future.wait(
+        [chat.sendMessage(content), chat.sendMessage(content)]);
+    resps.forEach((r) {
+      print(r.text);
+    });
+  }
+
   Stream<ChatResult> chatCompleteStream(
       List<Message> history, Message userMessage) async* {
     // add the sysmessage again here because otherwise it gets ignored often

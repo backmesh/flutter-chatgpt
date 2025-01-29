@@ -37,6 +37,7 @@ class _ChatPageState extends State<ChatPage> {
     final aiMessage = new Message(
         content: '', model: UserStore.instance.model, waiting: true);
     await UserStore.instance.saveMessage(chat, aiMessage);
+    await GeminiClient.instance.chatComplete(allMessages, userMessage);
     final subscription = GeminiClient.instance
         .chatCompleteStream(allMessages, userMessage)
         .listen((chatResult) async {

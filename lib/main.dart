@@ -82,6 +82,7 @@ class _AuthGate extends StatelessWidget {
           UserStore(user);
           _posthogFlutterPlugin.identify(userId: user.uid);
           user.getIdToken().then((jwt) {
+            // print(jwt);
             GeminiClient(jwt!, UserStore.instance.model);
           });
         }
