@@ -1,6 +1,6 @@
 # ChatGPT-like Flutter App
 
-Nimbus is a ChatGPT-like interface built on Flutter to target multiple platforms. [Live Demo](https://flutter-chatgpt.pages.dev).
+ChatGPT-like interface built on Flutter to target multiple platforms. [Live Demo](https://flutter-chatgpt.pages.dev).
 
 ![](./demo.gif)
 

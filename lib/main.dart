@@ -130,7 +130,7 @@ class _Login extends StatelessWidget {
               height: 30,
             ),
             const Text(
-              'nimbus',
+              'ChatGPT-like Flutter App',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             )
           ],
