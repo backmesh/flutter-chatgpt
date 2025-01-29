@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
-import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nimbus/gemini.dart';
 import 'package:nimbus/user_store.dart';
@@ -20,8 +19,7 @@ void main() async {
     persistenceEnabled: true,
   );
   FirebaseUIAuth.configureProviders([
-    GoogleProvider(
-        clientId: DefaultFirebaseOptions.currentPlatform.iosClientId!)
+    EmailAuthProvider(),
   ]);
   runApp(Main());
 }
@@ -84,6 +82,7 @@ class _AuthGate extends StatelessWidget {
           UserStore(user);
           _posthogFlutterPlugin.identify(userId: user.uid);
           user.getIdToken().then((jwt) {
+            // print(jwt);
             GeminiClient(jwt!, UserStore.instance.model);
           });
         }
@@ -135,29 +134,6 @@ class _Login extends StatelessWidget {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             )
           ],
-        );
-      },
-      footerBuilder: (context, action) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          child: Column(
-            children: [
-              const SizedBox(
-                height: 40,
-              ),
-              const Divider(
-                // color: grey300,
-                thickness: 0.7,
-              ),
-              const SizedBox(
-                height: 40,
-              ),
-              GoogleSignInButton(
-                  loadingIndicator: Center(child: CircularProgressIndicator()),
-                  auth: FirebaseAuth.instance,
-                  clientId: DefaultFirebaseOptions.currentPlatform.iosClientId!)
-            ],
-          ),
         );
       },
       headerBuilder: (context, constraints, _) {

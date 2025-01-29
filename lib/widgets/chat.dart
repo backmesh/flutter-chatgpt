@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
-import 'package:flutter_highlight/themes/a11y-light.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:nimbus/gemini.dart';
 import 'package:nimbus/widgets/common.dart';
-import 'package:nimbus/widgets/highlight.dart';
-import 'package:nimbus/widgets/input.dart';
 
 import '../user_store.dart';
 
@@ -30,22 +27,21 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> sendMessage({
     required List<Message> allMessages,
     required String content,
-    required List<String> filePaths,
   }) async {
     final emptyChat = widget.chat == null && allMessages.isEmpty;
     if (emptyChat) await UserStore.instance.saveChat(chat);
-    final userMessage = new Message(content: content, filePaths: filePaths);
+    final userMessage = new Message(content: content);
     await UserStore.instance.saveMessage(chat, userMessage);
     _userHasScrolled = false;
     scrollToLastMessage();
     final aiMessage = new Message(
         content: '', model: UserStore.instance.model, waiting: true);
     await UserStore.instance.saveMessage(chat, aiMessage);
+    await GeminiClient.instance.chatComplete(allMessages, userMessage);
     final subscription = GeminiClient.instance
         .chatCompleteStream(allMessages, userMessage)
         .listen((chatResult) async {
       aiMessage.content = chatResult.content;
-      aiMessage.fnCalls = chatResult.fnCalls;
       await UserStore.instance.saveMessage(chat, aiMessage);
       scrollToLastMessage();
     });
@@ -135,17 +131,36 @@ class _ChatPageState extends State<ChatPage> {
                           })),
                   const SizedBox(height: 15),
                   // bind allMessages
-                  InputField(
-                    (
-                        {required String content,
-                        required List<String> filePaths}) {
-                      return sendMessage(
-                        allMessages: allMessages,
-                        content: content,
-                        filePaths: filePaths,
-                      );
-                    },
-                  )
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: TextField(
+                      controller: _inputController,
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.send),
+                          onPressed: () {
+                            if (_inputController.text.trim().isNotEmpty) {
+                              sendMessage(
+                                allMessages: allMessages,
+                                content: _inputController.text,
+                              );
+                              _inputController.clear();
+                            }
+                          },
+                        ),
+                      ),
+                      onSubmitted: (content) {
+                        if (content.trim().isNotEmpty) {
+                          sendMessage(
+                            allMessages: allMessages,
+                            content: content,
+                          );
+                          _inputController.clear();
+                        }
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -219,17 +234,10 @@ class AIMessage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 MarkdownBody(
-                  data: message.fnCalls.length > 0
-                      ? '''```bash
-${message.fnCalls.map((f) => f.fnArgs['code']).join('\n')}
-                      '''
-                      : message.content,
+                  data: message.content,
                   // TODO selectability is choppy, how can we fix that?
                   selectable: true,
                   extensionSet: md.ExtensionSet.gitHubWeb,
-                  builders: {
-                    'code': CodeElementBuilder(),
-                  },
                 ),
                 if (message.waiting)
                   Padding(
@@ -241,43 +249,10 @@ ${message.fnCalls.map((f) => f.fnArgs['code']).join('\n')}
                     ),
                   ),
                 SizedBox(height: 10),
-                if (message.fnCalls.length > 0 && !message.fnCallsDone())
-                  FilledButton(
-                      // TODO show loading indicator while running
-                      // TODO be able to cancel
-                      // TODO automatically respond with error
-                      onPressed: () async {
-                        for (var fnC in message.fnCalls) {
-                          await fnC.run();
-                        }
-                        await UserStore.instance.saveMessage(chat, message);
-                      },
-                      child: Text('Run'))
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class CodeElementBuilder extends MarkdownElementBuilder {
-  @override
-  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    var language = '';
-
-    if (element.attributes['class'] != null) {
-      String lg = element.attributes['class'] as String;
-      language = lg.substring(9);
-    }
-    return SizedBox(
-      child: SelectableHighlightView(
-        element.textContent,
-        language: language,
-        theme: a11yLightTheme,
-        padding: const EdgeInsets.all(8),
-        textStyle: TextStyle(fontFamily: 'monospace', fontSize: 14.0),
       ),
     );
   }
